@@ -1,18 +1,24 @@
 "use client";
 
-import { Crosshair } from "lucide-react";
+import { Crosshair, Users } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { BattleTagForm } from "@/components/BattleTagForm";
 import { ComparisonTable } from "@/components/ComparisonTable";
+import { CloudShareButton } from "@/components/CloudShareButton";
+import { DiscordSendButton } from "@/components/DiscordSendButton";
 import { ExportButton } from "@/components/ExportButton";
 import { FeedbackCards } from "@/components/FeedbackCards";
 import { MetaSynergyCard } from "@/components/MetaSynergyCard";
 import { MetricsRadarChart } from "@/components/MetricsRadarChart";
+import { ProfileBar } from "@/components/ProfileBar";
 import { RoleFilterTabs } from "@/components/RoleFilterTabs";
 import { ScoreCards } from "@/components/ScoreCards";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { TierGraph } from "@/components/TierGraph";
 import { TierListTable } from "@/components/TierListTable";
+import { useLocalProfile } from "@/hooks/useLocalProfile";
 import { useTeamStorage } from "@/hooks/useTeamStorage";
 import { analyzeSquadSynergy } from "@/lib/synergyAnalyzer";
 import type { GameMode, PlayerAnalysis, SquadPlayerError } from "@/lib/types";
@@ -20,6 +26,8 @@ import type { HeroMetaDataset, MetaPlatform, MetaRegion } from "@/types/tier";
 
 export default function HomePage() {
   const [tags, setTags] = useState<string[]>(["", "", "", "", ""]);
+  const [teamName, setTeamName] = useState("");
+  const [shareUrl, setShareUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [analyses, setAnalyses] = useState<PlayerAnalysis[]>([]);
   const [errors, setErrors] = useState<SquadPlayerError[]>([]);
@@ -30,9 +38,11 @@ export default function HomePage() {
   const [metaDataset, setMetaDataset] = useState<HeroMetaDataset | null>(null);
   const [metaLoading, setMetaLoading] = useState(true);
   const [metaError, setMetaError] = useState("");
+  const [metaRefresh, setMetaRefresh] = useState(0);
   const [selectedSwaps, setSelectedSwaps] = useState<Record<string, string>>({});
   const reportRef = useRef<HTMLDivElement>(null);
   const { teams, saveTeam, deleteTeam } = useTeamStorage();
+  const { profile, hydrated: profileHydrated, accessToken, register, logout } = useLocalProfile();
   const synergy = useMemo(
     () => analyzeSquadSynergy(analyses, metaDataset?.heroes ?? []),
     [analyses, metaDataset],
@@ -60,7 +70,7 @@ export default function HomePage() {
     }
     void loadMeta();
     return () => controller.abort();
-  }, [gamemode, platform, region]);
+  }, [gamemode, platform, region, metaRefresh]);
 
   function changeGamemode(nextGamemode: GameMode) {
     if (nextGamemode === gamemode) return;
@@ -122,7 +132,7 @@ export default function HomePage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#0f172a] text-slate-100">
+    <main className="min-h-screen bg-background text-foreground">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-[radial-gradient(circle_at_top,_rgba(249,115,22,0.18),_transparent_55%)]" />
       <div className="relative mx-auto flex max-w-7xl flex-col gap-10 px-4 py-10 sm:px-6 lg:px-8">
         <header className="space-y-4">
@@ -139,6 +149,29 @@ export default function HomePage() {
           </p>
         </header>
 
+        <div className="flex items-start gap-3">
+          <div className="min-w-0 flex-1">
+            <ProfileBar
+              profile={profile}
+              hydrated={profileHydrated}
+              onRegister={register}
+              onLogout={logout}
+              onUseBattleTag={(battleTag) => {
+                setTags((current) => {
+                  const next = [...current];
+                  next[0] = battleTag;
+                  return next;
+                });
+                toast.success("내 배틀태그를 플레이어 1 입력칸에 적용했습니다.");
+              }}
+            />
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <Link href="/lfg" className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-700 px-3 text-sm text-slate-200 hover:bg-slate-800"><Users className="h-4 w-4" /> 그룹 찾기</Link>
+            <ThemeToggle />
+          </div>
+        </div>
+
         <BattleTagForm
           tags={tags}
           loading={loading}
@@ -147,6 +180,7 @@ export default function HomePage() {
           teams={teams}
           onGamemodeChange={changeGamemode}
           onTagsChange={setTags}
+          onTeamNameChange={setTeamName}
           onSaveTeam={handleSaveTeam}
           onDeleteTeam={handleDeleteTeam}
           onSubmit={analyzeSquad}
@@ -162,10 +196,15 @@ export default function HomePage() {
               {gamemode === "competitive" ? "경쟁전" : "빠른 대전"} 스쿼드 분석 결과
             </h2>
           </div>
-          {analyses.length > 0 ? <ExportButton targetRef={reportRef} /> : null}
+          {analyses.length > 0 ? <div className="flex flex-wrap gap-2"><ExportButton targetRef={reportRef} /><DiscordSendButton title={teamName.trim() || "Overwatch Squad Report"} gamemode={gamemode} analyses={analyses} synergy={synergy} shareUrl={shareUrl} accessToken={accessToken} /></div> : null}
         </div>
 
-        <div ref={reportRef} className="space-y-10 rounded-2xl bg-[#0f172a] p-2 text-slate-100">
+        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-slate-800 bg-slate-900/40 p-4">
+          <p className="mr-auto text-sm text-slate-300">로그인 없이 공유할 수 있는 클라우드 리포트</p>
+          <CloudShareButton name={teamName} battleTags={tags} gamemode={gamemode} profile={profile} accessToken={accessToken} onShareUrlChange={setShareUrl} />
+        </div>
+
+        <div ref={reportRef} className="space-y-10 rounded-2xl bg-background p-2 text-foreground">
           {analyses.length > 0 ? (
             <section className="space-y-5">
               <ScoreCards analyses={analyses} />
@@ -210,7 +249,7 @@ export default function HomePage() {
               loading={metaLoading}
             />
             {metaDataset ? (
-              <TierListTable heroes={metaDataset.heroes} roleFilter={roleFilter} />
+              <TierListTable heroes={metaDataset.heroes} roleFilter={roleFilter} profile={profile} accessToken={accessToken} onVoteSaved={() => setMetaRefresh((current) => current + 1)} />
             ) : (
               <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-5 text-sm text-slate-400">
                 티어표는 OverFast의 실시간 통계 응답이 준비되면 표시됩니다.

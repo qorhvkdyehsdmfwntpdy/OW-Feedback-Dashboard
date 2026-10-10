@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Noto_Sans_KR, Rajdhani } from "next/font/google";
 import { Toaster } from "sonner";
+import { ThemeProvider } from "@/components/ThemeProvider";
 import "./globals.css";
 
 const display = Rajdhani({
@@ -27,16 +28,18 @@ export default function RootLayout({
   children: ReactNode;
 }>) {
   return (
-    <html lang="ko">
+    <html lang="ko" suppressHydrationWarning>
       <body className={`${display.variable} ${body.variable} antialiased`}>
-        {children}
-        <Toaster
-          theme="dark"
-          position="top-center"
-          toastOptions={{
-            className: "border border-slate-700 bg-slate-900 text-slate-100",
-          }}
-        />
+        <ThemeProvider>
+          {children}
+          <Toaster
+            theme="system"
+            position="top-center"
+            toastOptions={{
+              className: "border border-slate-700 bg-slate-900 text-slate-100",
+            }}
+          />
+        </ThemeProvider>
       </body>
     </html>
   );

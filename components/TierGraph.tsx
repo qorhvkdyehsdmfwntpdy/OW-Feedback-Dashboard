@@ -12,15 +12,15 @@ import {
   ZAxis,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { HeroMetaAnalysis, HeroTier } from "@/types/tier";
+import type { HeroMetaAnalysis } from "@/types/tier";
 
-const tierColors: Record<HeroTier, string> = {
-  S: "#fb7185",
-  A: "#f97316",
-  B: "#facc15",
-  C: "#38bdf8",
-  D: "#94a3b8",
+const roleColors = {
+  tank: "#38bdf8",
+  damage: "#fb923c",
+  support: "#e879f9",
 };
+
+const roleLabels = { tank: "탱커", damage: "딜러", support: "힐러" };
 
 interface TierGraphProps {
   heroes: HeroMetaAnalysis[];
@@ -77,26 +77,32 @@ export function TierGraph({ heroes, loading = false }: TierGraphProps) {
                   <ReferenceLine y={averageWinZ} stroke="#64748b" strokeDasharray="4 4" />
                   <Tooltip
                     cursor={{ strokeDasharray: "4 4" }}
-                    contentStyle={{ background: "#0f172a", border: "1px solid #475569", borderRadius: 10, color: "#f1f5f9" }}
-                    formatter={(value, name, item) => {
-                      const hero = item.payload as HeroMetaAnalysis;
-                      if (name === "픽률") return [`${hero.pickrate.toFixed(2)}%`, "픽률"];
-                      return [typeof value === "number" ? value.toFixed(2) : value, name];
-                    }}
-                    labelFormatter={(_, payload) => {
-                      const hero = payload[0]?.payload as HeroMetaAnalysis | undefined;
-                      return hero ? `${hero.name} · ${hero.tier} 티어 · #${hero.rank}` : "영웅 메타";
+                    content={({ active, payload }) => {
+                      const hero = payload?.[0]?.payload as HeroMetaAnalysis | undefined;
+                      if (!active || !hero) return null;
+                      return (
+                        <div className="min-w-48 rounded-lg border border-slate-600 bg-slate-950 p-3 text-sm text-white shadow-xl">
+                          <p className="font-bold">{hero.name} <span className="text-slate-400">{roleLabels[hero.role]} · {hero.tier} 티어</span></p>
+                          <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                            <dt className="text-slate-400">픽률</dt><dd className="text-right">{hero.pickrate.toFixed(2)}%</dd>
+                            <dt className="text-slate-400">승률</dt><dd className="text-right">{hero.winrate.toFixed(2)}%</dd>
+                            <dt className="text-slate-400">밴률</dt><dd className="text-right">{hero.banrate === null ? "미제공" : `${hero.banrate.toFixed(2)}%`}</dd>
+                            <dt className="text-slate-400">메타 점수</dt><dd className="text-right font-semibold text-orange-300">{hero.metaScore.toFixed(1)}</dd>
+                          </dl>
+                        </div>
+                      );
                     }}
                   />
-                  {(["S", "A", "B", "C", "D"] as HeroTier[]).map((tier) => (
+                  {(["tank", "damage", "support"] as const).map((role) => (
                     <Scatter
-                      key={tier}
-                      name={`${tier} 티어`}
-                      data={heroes.filter((hero) => hero.tier === tier)}
-                      fill={tierColors[tier]}
-                      fillOpacity={0.82}
-                      stroke="#0f172a"
-                      strokeWidth={1}
+                      key={role}
+                      name={roleLabels[role]}
+                      data={heroes.filter((hero) => hero.role === role)}
+                      fill={roleColors[role]}
+                      fillOpacity={0.85}
+                      stroke="#ffffff"
+                      strokeOpacity={0.65}
+                      strokeWidth={1.25}
                     />
                   ))}
                 </ScatterChart>
@@ -105,11 +111,12 @@ export function TierGraph({ heroes, loading = false }: TierGraphProps) {
           </div>
         )}
         <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs text-slate-300">
-          {Object.entries(tierColors).map(([tier, color]) => (
-            <span key={tier} className="inline-flex items-center gap-2">
-              <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }} />{tier} 티어
+          {Object.entries(roleColors).map(([role, color]) => (
+            <span key={role} className="inline-flex items-center gap-2">
+              <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }} />{roleLabels[role as keyof typeof roleLabels]}
             </span>
           ))}
+          <span className="text-slate-500">마커 크기: 픽률 · 테두리/라벨: 티어</span>
         </div>
       </CardContent>
     </Card>

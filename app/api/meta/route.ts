@@ -15,7 +15,7 @@ export async function GET(request: Request) {
 
   try {
     const dataset = await fetchHeroMeta({ mode, platform, region });
-    return NextResponse.json(dataset, { headers: { "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=7200" } });
+    return NextResponse.json(dataset, { headers: { "Cache-Control": "public, s-maxage=30, stale-while-revalidate=60" } });
   } catch {
     return NextResponse.json(
       { message: "OverFast 영웅 메타 데이터를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요." },

@@ -1,5 +1,6 @@
 import type { HeroCatalogItem, HeroMetaDataset, HeroPopulationStats, MetaGamemode, MetaPlatform, MetaRegion } from "@/types/tier";
-import { calculateHeroTiers, type HeroBase } from "@/lib/tierCalculator";
+import { blendCommunityVotes, calculateHeroTiers, type HeroBase } from "@/lib/tierCalculator";
+import { getSupabaseClient } from "@/lib/supabase";
 
 const BASE_URL = (process.env.OVERFAST_API_BASE ?? "https://overfast-api.tekrop.fr").replace(/\/$/u, "");
 
@@ -61,12 +62,38 @@ export async function fetchHeroMeta(options: {
     return [{ ...hero, ...population }];
   });
 
+  const heroes = calculateHeroTiers(dataset);
+  const supabase = getSupabaseClient();
+  if (supabase) {
+    const { data } = await supabase.from("hero_votes").select("hero_key,tier").limit(5000);
+    if (data) {
+      const values: Record<string, { total: number; count: number }> = {};
+      const points: Record<string, number> = { S: 5, A: 4, B: 3, C: 2, D: 1 };
+      for (const vote of data) {
+        const current = values[vote.hero_key] ?? { total: 0, count: 0 };
+        current.total += points[vote.tier] ?? 3;
+        current.count += 1;
+        values[vote.hero_key] = current;
+      }
+      const communityVotes = Object.entries(values).map(([heroKey, value]) => ({ heroKey, averagePoints: value.total / value.count, count: value.count }));
+      return {
+        heroes: blendCommunityVotes(heroes, communityVotes),
+        mode: options.mode,
+        platform: options.platform,
+        region: options.region,
+        fetchedAt: new Date().toISOString(),
+        source: "overfast" as const,
+        communityVotesEnabled: true,
+      };
+    }
+  }
   return {
-    heroes: calculateHeroTiers(dataset),
+    heroes,
     mode: options.mode,
     platform: options.platform,
     region: options.region,
     fetchedAt: new Date().toISOString(),
     source: "overfast",
+    communityVotesEnabled: false,
   };
 }

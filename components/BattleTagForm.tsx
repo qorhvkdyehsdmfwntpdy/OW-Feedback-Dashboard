@@ -22,6 +22,7 @@ interface BattleTagFormProps {
   teams: SavedSquadTeam[];
   onGamemodeChange: (gamemode: GameMode) => void;
   onTagsChange: (tags: string[]) => void;
+  onTeamNameChange: (name: string) => void;
   onSaveTeam: (name: string, tags: string[]) => boolean;
   onDeleteTeam: (teamId: string) => boolean;
   onSubmit: () => void;
@@ -36,6 +37,7 @@ export function BattleTagForm({
   teams,
   onGamemodeChange,
   onTagsChange,
+  onTeamNameChange,
   onSaveTeam,
   onDeleteTeam,
   onSubmit,
@@ -91,6 +93,7 @@ export function BattleTagForm({
     if (selected) {
       onTagsChange([...selected.battleTags]);
       setTeamName(selected.name);
+      onTeamNameChange(selected.name);
     }
   }
 
@@ -143,7 +146,10 @@ export function BattleTagForm({
             <Input
               aria-label="팀 이름"
               value={teamName}
-              onChange={(event) => setTeamName(event.target.value)}
+              onChange={(event) => {
+                setTeamName(event.target.value);
+                onTeamNameChange(event.target.value);
+              }}
               placeholder="저장할 팀 이름"
               maxLength={40}
             />

@@ -30,6 +30,9 @@ export interface HeroMetaAnalysis extends HeroCatalogItem, HeroPopulationStats {
   metaScore: number;
   tier: HeroTier;
   rank: number;
+  communityScore?: number | null;
+  communityVoteCount?: number;
+  communityTier?: HeroTier | null;
 }
 
 export interface HeroMetaDataset {
@@ -39,6 +42,7 @@ export interface HeroMetaDataset {
   region: MetaRegion;
   fetchedAt: string;
   source: "overfast";
+  communityVotesEnabled?: boolean;
 }
 
 export interface HeroUsage {

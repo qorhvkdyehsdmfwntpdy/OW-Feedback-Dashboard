@@ -2,8 +2,16 @@
 
 :root {
   --background: #0f172a;
-  --foreground: #e2e8f0;
+  --foreground: #f1f5f9;
   --accent: #f97316;
+  color-scheme: dark;
+}
+
+:root.light {
+  --background: #f1f5f9;
+  --foreground: #172033;
+  --accent: #ea580c;
+  color-scheme: light;
 }
 
 @theme inline {
@@ -16,6 +24,68 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  transition: background-color 220ms ease, color 220ms ease;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+.light body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.light [class~="bg-[#0f172a]"],
+.light [class~="bg-slate-950"],
+.light [class~="bg-slate-950/70"],
+.light [class~="bg-slate-950/60"],
+.light [class~="bg-slate-950/40"],
+.light [class~="bg-slate-900"],
+.light [class~="bg-slate-900/80"],
+.light [class~="bg-slate-900/70"],
+.light [class~="bg-slate-900/60"],
+.light [class~="bg-slate-900/50"],
+.light [class~="bg-slate-900/40"] {
+  background-color: #ffffff !important;
+}
+
+.light [class~="bg-slate-800"],
+.light [class~="bg-slate-800/80"],
+.light [class~="bg-slate-800/70"],
+.light [class~="bg-slate-800/60"],
+.light [class~="bg-slate-800/50"] {
+  background-color: #e2e8f0 !important;
+}
+
+.light [class~="text-white"],
+.light [class~="text-slate-100"],
+.light [class~="text-slate-200"],
+.light [class~="text-slate-300"] {
+  color: #1e293b !important;
+}
+
+.light [class~="text-slate-400"],
+.light [class~="text-slate-500"] {
+  color: #475569 !important;
+}
+
+.light [class~="border-slate-700"],
+.light [class~="border-slate-700/80"],
+.light [class~="border-slate-800"] {
+  border-color: #cbd5e1 !important;
+}
+
+.light [class~="hover:bg-slate-800"]:hover,
+.light [class~="hover:bg-slate-800/50"]:hover {
+  background-color: #e2e8f0 !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body {
+    transition: none;
+  }
 }
 
 h1,

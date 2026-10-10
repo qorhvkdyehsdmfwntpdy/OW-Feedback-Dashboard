@@ -81,3 +81,28 @@ export function calculateHeroTiers(dataset: HeroBase[]): HeroMetaAnalysis[] {
 
   return ordered;
 }
+
+export function blendCommunityVotes(
+  heroes: HeroMetaAnalysis[],
+  votes: Array<{ heroKey: string; averagePoints: number; count: number }>,
+): HeroMetaAnalysis[] {
+  const voteByKey = new Map(votes.map((vote) => [vote.heroKey, vote]));
+  const blended = heroes.map((hero) => {
+    const vote = voteByKey.get(hero.key);
+    const communityScore = vote ? ((vote.averagePoints - 1) / 4) * 100 : null;
+    const confidence = vote ? vote.count / (vote.count + 20) : 0;
+    const adjustedScore = communityScore === null
+      ? hero.metaScore
+      : hero.metaScore * (1 - confidence * 0.25) + communityScore * confidence * 0.25;
+    return { ...hero, metaScore: Math.round(adjustedScore * 10) / 10, communityScore, communityVoteCount: vote?.count ?? 0 };
+  }).sort((first, second) => second.metaScore - first.metaScore || first.name.localeCompare(second.name));
+  blended.forEach((hero, index) => {
+    hero.rank = index + 1;
+    hero.tier = tierFromPercentile((blended.length - index) / blended.length);
+    const averagePoints = voteByKey.get(hero.key)?.averagePoints;
+    hero.communityTier = averagePoints === undefined
+      ? null
+      : averagePoints >= 4.5 ? "S" : averagePoints >= 3.5 ? "A" : averagePoints >= 2.5 ? "B" : averagePoints >= 1.5 ? "C" : "D";
+  });
+  return blended;
+}
