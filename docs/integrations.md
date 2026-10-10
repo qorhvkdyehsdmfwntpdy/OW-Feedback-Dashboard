@@ -4,7 +4,7 @@
 
 1. Create a Supabase project and copy its project URL, anon key, and service-role key into `.env.local` using `.env.example` as the template.
 2. In Supabase Authentication settings, enable **Allow anonymous sign-ins**. The browser creates a Supabase anonymous user and keeps its session. The local nickname/BattleTag profile remains a display profile, not a password account.
-3. Run `supabase/migrations/202610100001_dashboard_features.sql` in the Supabase SQL Editor (or apply it with the Supabase CLI).
+3. Run `supabase/migrations/202610100001_dashboard_features.sql` and then `supabase/migrations/202610110001_lfg_recruitment_fields.sql` in order (or apply both with the Supabase CLI).
 4. Restart Next.js after changing environment variables.
 
 `SUPABASE_SERVICE_ROLE_KEY` is server-only. Never prefix it with `NEXT_PUBLIC_`, commit a real value, or expose it in client code. Public reads use the anon key; API mutations verify the Supabase JWT and use the service-role client on the server. RLS allows public reads and denies anonymous table writes.
@@ -13,13 +13,13 @@ Cloud squad links store the entered BattleTags and mode in a public row. Anyone 
 
 Community votes are limited to one vote per Supabase anonymous user and hero; a later vote replaces that user's previous vote. Community scores receive a confidence-weighted blend capped at 25% of the algorithm score, so a small number of votes cannot dominate the meta tier. Anonymous Supabase identities are pseudonymous and can be reset by clearing browser data; they are not proof of a real-world identity.
 
-LFG authors and applicants are associated with Supabase user UUIDs. The migration adds `lfg_posts` to Supabase Realtime when that publication is available; the page also polls every 20 seconds as a fallback.
+LFG recruitment rows include purpose, role, target tier, team capacity, BattleTag, and optional Discord contact. Applicants live in an RLS-protected table and are not returned to other users; the API returns only aggregate counts and the current viewer's own application state. A row-locking Postgres function prevents applying twice or exceeding capacity. The migration adds `lfg_posts` to Supabase Realtime when that publication is available; the page also polls every 20 seconds as a fallback.
 
 ## Discord
 
 ### Channel webhook reports
 
-Create a Discord channel webhook and set `DISCORD_WEBHOOK_URL` in `.env.local`. The report button posts score, KDA, win rate, style tags, squad meta fit, and a share URL if one has been created. The webhook URL is only read by the server route.
+Create a Discord channel webhook and set `DISCORD_WEBHOOK_URL` in `.env.local`. The report button sends the squad BattleTags to the server, which re-fetches current OverFast stats and recomputes OW-Scores and meta fit before posting the embed. The webhook URL is only read by the server route. No `discord.js` package is required: the app uses Discord's signed HTTP Interactions endpoint and the standard `fetch` API.
 
 ### `/squad` command
 

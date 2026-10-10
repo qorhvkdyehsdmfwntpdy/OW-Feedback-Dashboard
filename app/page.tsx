@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { BattleTagForm } from "@/components/BattleTagForm";
 import { ComparisonTable } from "@/components/ComparisonTable";
 import { CloudShareButton } from "@/components/CloudShareButton";
-import { DiscordSendButton } from "@/components/DiscordSendButton";
+import { DiscordExportButton } from "@/components/DiscordExportButton";
 import { ExportButton } from "@/components/ExportButton";
 import { FeedbackCards } from "@/components/FeedbackCards";
 import { MetaSynergyCard } from "@/components/MetaSynergyCard";
@@ -196,7 +196,7 @@ export default function HomePage() {
               {gamemode === "competitive" ? "경쟁전" : "빠른 대전"} 스쿼드 분석 결과
             </h2>
           </div>
-          {analyses.length > 0 ? <div className="flex flex-wrap gap-2"><ExportButton targetRef={reportRef} /><DiscordSendButton title={teamName.trim() || "Overwatch Squad Report"} gamemode={gamemode} analyses={analyses} synergy={synergy} shareUrl={shareUrl} accessToken={accessToken} /></div> : null}
+          {analyses.length > 0 ? <div className="flex flex-wrap gap-2"><ExportButton targetRef={reportRef} /><DiscordExportButton teamName={teamName.trim() || "Overwatch Squad Report"} battleTags={tags} gamemode={gamemode} shareUrl={shareUrl} accessToken={accessToken} /></div> : null}
         </div>
 
         <div className="flex flex-wrap items-center gap-3 rounded-xl border border-slate-800 bg-slate-900/40 p-4">
