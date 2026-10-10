@@ -122,6 +122,12 @@ export interface NormalizedPlayerStats {
   healingPer10min: number;
   elimsPer10min: number;
   assistsPer10min: number;
+  heroUsage: Array<{
+    heroKey: string;
+    timePlayedSeconds: number;
+    gamesPlayed: number;
+    winrate: number;
+  }>;
   gamemode: GameMode;
 }
 

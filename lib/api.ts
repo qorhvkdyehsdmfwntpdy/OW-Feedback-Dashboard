@@ -153,6 +153,15 @@ function toNormalized(
     damage: 0,
     healing: 0,
   };
+  const heroUsage = Object.entries(stats.heroes ?? {})
+    .map(([heroKey, heroStats]) => ({
+      heroKey,
+      timePlayedSeconds: finiteNumber(heroStats.time_played),
+      gamesPlayed: finiteNumber(heroStats.games_played),
+      winrate: finiteNumber(heroStats.winrate),
+    }))
+    .filter((hero) => hero.timePlayedSeconds > 0)
+    .sort((first, second) => second.timePlayedSeconds - first.timePlayedSeconds);
 
   return {
     battleTag,
@@ -172,6 +181,7 @@ function toNormalized(
     healingPer10min: finiteNumber(average.healing),
     elimsPer10min: finiteNumber(average.eliminations),
     assistsPer10min: finiteNumber(average.assists),
+    heroUsage,
     gamemode,
   };
 }
