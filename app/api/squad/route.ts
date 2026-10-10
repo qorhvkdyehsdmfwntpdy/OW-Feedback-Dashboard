@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { fetchSquadStats } from "@/lib/api";
 import { analyzeSquad } from "@/lib/calculator";
+import type { GameMode } from "@/lib/types";
 
 export async function POST(request: Request) {
   try {
-    const body = (await request.json()) as { battleTags?: unknown };
+    const body = (await request.json()) as { battleTags?: unknown; gamemode?: unknown };
+    const gamemode: GameMode = body.gamemode === "quickplay" ? "quickplay" : "competitive";
     const battleTags = Array.isArray(body.battleTags)
       ? body.battleTags
           .filter((tag): tag is string => typeof tag === "string")
@@ -20,7 +22,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { players, errors } = await fetchSquadStats(battleTags);
+    const { players, errors } = await fetchSquadStats(battleTags, gamemode);
     const analyses = analyzeSquad(players);
 
     return NextResponse.json({ analyses, errors });

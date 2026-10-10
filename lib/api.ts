@@ -1,6 +1,7 @@
 import {
   PlayerFetchError,
   type FetchPlayerErrorCode,
+  type GameMode,
   type NormalizedPlayerStats,
   type OverfastErrorBody,
   type PlayerSummary,
@@ -175,7 +176,10 @@ function toNormalized(
   };
 }
 
-export async function fetchPlayerStats(battleTag: string): Promise<NormalizedPlayerStats> {
+export async function fetchPlayerStats(
+  battleTag: string,
+  gamemode: GameMode = "competitive",
+): Promise<NormalizedPlayerStats> {
   const trimmed = battleTag.trim();
   if (!/^.+[#-]\d{3,8}$/u.test(trimmed)) {
     throw new PlayerFetchError(
@@ -194,32 +198,26 @@ export async function fetchPlayerStats(battleTag: string): Promise<NormalizedPla
     displayTag,
   );
 
-  const competitive = await overfastGet<StatsSummary>(
-    `/players/${encoded}/stats/summary?gamemode=competitive`,
+  const modeStats = await overfastGet<StatsSummary>(
+    `/players/${encoded}/stats/summary?gamemode=${gamemode}`,
     displayTag,
   );
 
-  if (hasMeaningfulStats(competitive.general)) {
-    return toNormalized(displayTag, playerId, summary, competitive, "competitive");
-  }
-
-  const allModes = await overfastGet<StatsSummary>(
-    `/players/${encoded}/stats/summary`,
-    displayTag,
-  );
-
-  if (!hasMeaningfulStats(allModes.general)) {
+  if (!hasMeaningfulStats(modeStats.general)) {
     throw new PlayerFetchError(
       "private",
       displayTag,
-      "해당 유저는 비공개 프로필입니다",
+      "선택한 모드의 전적이 없거나 해당 유저는 비공개 프로필입니다",
     );
   }
 
-  return toNormalized(displayTag, playerId, summary, allModes, "all-modes");
+  return toNormalized(displayTag, playerId, summary, modeStats, gamemode);
 }
 
-export async function fetchSquadStats(battleTags: string[]): Promise<{
+export async function fetchSquadStats(
+  battleTags: string[],
+  gamemode: GameMode = "competitive",
+): Promise<{
   players: NormalizedPlayerStats[];
   errors: Array<{ battleTag: string; code: FetchPlayerErrorCode; message: string }>;
 }> {
@@ -227,7 +225,9 @@ export async function fetchSquadStats(battleTags: string[]): Promise<{
     .map((tag) => tag.trim())
     .filter((tag) => tag.length > 0);
 
-  const settled = await Promise.allSettled(unique.map((tag) => fetchPlayerStats(tag)));
+  const settled = await Promise.allSettled(
+    unique.map((tag) => fetchPlayerStats(tag, gamemode)),
+  );
 
   const players: NormalizedPlayerStats[] = [];
   const errors: Array<{

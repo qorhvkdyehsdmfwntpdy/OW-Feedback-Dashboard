@@ -69,7 +69,7 @@ export function ScoreCards({ analyses }: ScoreCardsProps) {
                     <p>
                       {analysis.player.gamesPlayed}판 · {analysis.player.gamemode === "competitive"
                         ? "경쟁전"
-                        : "전체"}
+                        : "빠른 대전"}
                     </p>
                   </div>
                 </div>

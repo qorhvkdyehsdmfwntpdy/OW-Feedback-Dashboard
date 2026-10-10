@@ -1,7 +1,7 @@
 "use client";
 
-import { Loader2, Search, ShieldAlert } from "lucide-react";
 import { FormEvent, useState } from "react";
+import { Gamepad2, Loader2, Search, ShieldAlert, Shield, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -11,13 +11,19 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import type { SquadPlayerError } from "@/lib/types";
+import type { GameMode, SquadPlayerError } from "@/lib/types";
+import type { SavedSquadTeam } from "@/hooks/useTeamStorage";
 
 interface BattleTagFormProps {
   tags: string[];
   loading: boolean;
   errors: SquadPlayerError[];
+  gamemode: GameMode;
+  teams: SavedSquadTeam[];
+  onGamemodeChange: (gamemode: GameMode) => void;
   onTagsChange: (tags: string[]) => void;
+  onSaveTeam: (name: string, tags: string[]) => boolean;
+  onDeleteTeam: (teamId: string) => boolean;
   onSubmit: () => void;
   onClearErrors: () => void;
 }
@@ -26,11 +32,18 @@ export function BattleTagForm({
   tags,
   loading,
   errors,
+  gamemode,
+  teams,
+  onGamemodeChange,
   onTagsChange,
+  onSaveTeam,
+  onDeleteTeam,
   onSubmit,
   onClearErrors,
 }: BattleTagFormProps) {
   const [localError, setLocalError] = useState<string | null>(null);
+  const [teamName, setTeamName] = useState("");
+  const [selectedTeamId, setSelectedTeamId] = useState("");
 
   function updateTag(index: number, value: string) {
     const next = [...tags];
@@ -45,7 +58,7 @@ export function BattleTagForm({
       setLocalError("최소 1명의 배틀태그를 Player#1234 형식으로 입력해 주세요.");
       return;
     }
-    const invalid = filled.find((tag) => !tag.includes("#") && !tag.includes("-"));
+    const invalid = filled.find((tag) => !/^.+[#-]\d{3,8}$/u.test(tag));
     if (invalid) {
       setLocalError(`"${invalid}" 형식이 올바르지 않습니다. Player#1234로 입력해 주세요.`);
       return;
@@ -53,6 +66,32 @@ export function BattleTagForm({
     setLocalError(null);
     onClearErrors();
     onSubmit();
+  }
+
+  function handleSaveTeam() {
+    if (!teamName.trim()) {
+      setLocalError("저장할 팀 이름을 입력해 주세요.");
+      return;
+    }
+    if (!tags.some((tag) => tag.trim())) {
+      setLocalError("저장할 배틀태그를 한 명 이상 입력해 주세요.");
+      return;
+    }
+    if (onSaveTeam(teamName, tags)) {
+      setLocalError(null);
+      setSelectedTeamId("");
+    } else {
+      setLocalError("팀을 저장하지 못했습니다. 브라우저 저장 공간을 확인해 주세요.");
+    }
+  }
+
+  function handleTeamSelect(teamId: string) {
+    setSelectedTeamId(teamId);
+    const selected = teams.find((team) => team.id === teamId);
+    if (selected) {
+      onTagsChange([...selected.battleTags]);
+      setTeamName(selected.name);
+    }
   }
 
   const modalOpen = Boolean(localError) || errors.length > 0;
@@ -73,10 +112,70 @@ export function BattleTagForm({
               `Player#1234` 형식으로 입력하면 OverFast 조회용 ID로 자동 변환됩니다.
             </p>
           </div>
+          <div className="flex shrink-0 rounded-lg border border-slate-700 bg-slate-950/70 p-1" role="group" aria-label="게임 모드 선택">
+            <Button
+              type="button"
+              size="sm"
+              variant={gamemode === "competitive" ? "default" : "ghost"}
+              aria-pressed={gamemode === "competitive"}
+              onClick={() => onGamemodeChange("competitive")}
+            >
+              <Shield className="h-4 w-4" /> 경쟁전
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={gamemode === "quickplay" ? "default" : "ghost"}
+              aria-pressed={gamemode === "quickplay"}
+              onClick={() => onGamemodeChange("quickplay")}
+            >
+              <Gamepad2 className="h-4 w-4" /> 빠른 대전
+            </Button>
+          </div>
           <Button type="submit" size="lg" disabled={loading}>
             {loading ? <Loader2 className="animate-spin" /> : <Search />}
             스쿼드 분석
           </Button>
+        </div>
+
+        <div className="mb-5 grid gap-3 rounded-xl border border-slate-800 bg-slate-950/40 p-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Input
+              aria-label="팀 이름"
+              value={teamName}
+              onChange={(event) => setTeamName(event.target.value)}
+              placeholder="저장할 팀 이름"
+              maxLength={40}
+            />
+            <Button type="button" variant="outline" onClick={handleSaveTeam}>
+              💾 현재 스쿼드 저장
+            </Button>
+          </div>
+          <div className="flex gap-2">
+            <select
+              aria-label="저장된 팀 불러오기"
+              value={selectedTeamId}
+              onChange={(event) => handleTeamSelect(event.target.value)}
+              className="h-11 min-w-0 flex-1 rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-100 outline-none focus:ring-2 focus:ring-orange-500"
+            >
+              <option value="">📂 저장된 팀 불러오기</option>
+              {teams.map((team) => (
+                <option key={team.id} value={team.id}>{team.name}</option>
+              ))}
+            </select>
+            <Button
+              type="button"
+              variant="outline"
+              aria-label="선택한 팀 삭제"
+              title="선택한 팀 삭제"
+              disabled={!selectedTeamId}
+              onClick={() => {
+                if (selectedTeamId && onDeleteTeam(selectedTeamId)) setSelectedTeamId("");
+              }}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
         <div className="grid gap-3 md:grid-cols-5">

@@ -1,4 +1,5 @@
 export type RoleKey = "tank" | "damage" | "support";
+export type GameMode = "competitive" | "quickplay";
 
 export type RankDivision =
   | "bronze"
@@ -121,7 +122,7 @@ export interface NormalizedPlayerStats {
   healingPer10min: number;
   elimsPer10min: number;
   assistsPer10min: number;
-  gamemode: "competitive" | "all-modes";
+  gamemode: GameMode;
 }
 
 export type StyleTagKey =
