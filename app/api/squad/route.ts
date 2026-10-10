@@ -4,8 +4,14 @@ import { analyzeSquad } from "@/lib/calculator";
 
 export async function POST(request: Request) {
   try {
-    const body = (await request.json()) as { battleTags?: string[] };
-    const battleTags = Array.isArray(body.battleTags) ? body.battleTags.slice(0, 5) : [];
+    const body = (await request.json()) as { battleTags?: unknown };
+    const battleTags = Array.isArray(body.battleTags)
+      ? body.battleTags
+          .filter((tag): tag is string => typeof tag === "string")
+          .map((tag) => tag.trim())
+          .filter(Boolean)
+          .slice(0, 5)
+      : [];
 
     if (battleTags.length === 0) {
       return NextResponse.json(

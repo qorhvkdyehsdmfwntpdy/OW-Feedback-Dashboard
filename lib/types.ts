@@ -82,6 +82,7 @@ export interface StatsSummary {
 export interface OverfastErrorBody {
   error?: string;
   message?: string;
+  detail?: string;
 }
 
 export type FetchPlayerErrorCode =

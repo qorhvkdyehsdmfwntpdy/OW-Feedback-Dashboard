@@ -24,23 +24,23 @@ export function MetricsRadarChart({ analyses }: MetricsRadarChartProps) {
   const data = [
     {
       metric: "생존",
-      ...Object.fromEntries(analyses.map((item) => [item.player.username, item.radar.survival])),
+      ...Object.fromEntries(analyses.map((item) => [item.player.playerId, item.radar.survival])),
     },
     {
       metric: "딜량",
-      ...Object.fromEntries(analyses.map((item) => [item.player.username, item.radar.damage])),
+      ...Object.fromEntries(analyses.map((item) => [item.player.playerId, item.radar.damage])),
     },
     {
       metric: "힐량",
-      ...Object.fromEntries(analyses.map((item) => [item.player.username, item.radar.healing])),
+      ...Object.fromEntries(analyses.map((item) => [item.player.playerId, item.radar.healing])),
     },
     {
       metric: "KDA",
-      ...Object.fromEntries(analyses.map((item) => [item.player.username, item.radar.kda])),
+      ...Object.fromEntries(analyses.map((item) => [item.player.playerId, item.radar.kda])),
     },
     {
       metric: "승률",
-      ...Object.fromEntries(analyses.map((item) => [item.player.username, item.radar.winrate])),
+      ...Object.fromEntries(analyses.map((item) => [item.player.playerId, item.radar.winrate])),
     },
   ];
 
@@ -66,7 +66,7 @@ export function MetricsRadarChart({ analyses }: MetricsRadarChartProps) {
               <Radar
                 key={item.player.playerId}
                 name={item.player.username}
-                dataKey={item.player.username}
+                dataKey={item.player.playerId}
                 stroke={PLAYER_COLORS[index % PLAYER_COLORS.length]}
                 fill={PLAYER_COLORS[index % PLAYER_COLORS.length]}
                 fillOpacity={0.12}

@@ -11,8 +11,9 @@ import {
 
 export { PlayerFetchError };
 
-const OVERFAST_BASE =
-  process.env.OVERFAST_API_BASE ?? "https://overfast-api.tekrop.fr";
+const OVERFAST_BASE = (
+  process.env.OVERFAST_API_BASE ?? "https://overfast-api.tekrop.fr"
+).replace(/\/$/, "");
 
 export function toPlayerId(battleTag: string): string {
   return battleTag.trim().replaceAll("#", "-");
@@ -25,9 +26,14 @@ export function toBattleTag(playerId: string): string {
 }
 
 function classifyStatus(status: number, body: OverfastErrorBody | null): FetchPlayerErrorCode {
-  const text = `${body?.error ?? ""} ${body?.message ?? ""}`.toLowerCase();
+  const text = `${body?.error ?? ""} ${body?.message ?? ""} ${body?.detail ?? ""}`.toLowerCase();
   if (status === 429) return "rate_limited";
-  if (status === 403 || text.includes("private") || text.includes("hidden")) {
+  if (
+    status === 401 ||
+    status === 403 ||
+    text.includes("private") ||
+    text.includes("hidden")
+  ) {
     return "private";
   }
   if (status === 404 || text.includes("not found") || text.includes("unknown player")) {
@@ -57,6 +63,7 @@ async function overfastGet<T>(path: string, battleTag: string): Promise<T> {
     response = await fetch(`${OVERFAST_BASE}${path}`, {
       headers: { Accept: "application/json" },
       cache: "no-store",
+      signal: AbortSignal.timeout(15_000),
     });
   } catch {
     throw new PlayerFetchError("network", battleTag, publicErrorMessage("network"));
@@ -123,6 +130,10 @@ function hasMeaningfulStats(stats: RoleOrHeroStats | undefined): boolean {
   return Boolean(stats && stats.games_played > 0 && stats.time_played > 0);
 }
 
+function finiteNumber(value: unknown): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
 function toNormalized(
   battleTag: string,
   playerId: string,
@@ -134,6 +145,13 @@ function toNormalized(
   const roleStats = stats.roles[mainRole];
   const source = hasMeaningfulStats(roleStats) ? roleStats! : stats.general;
   const competitiveRank = pickCompetitiveRank(summary, mainRole);
+  const average = source.average ?? {
+    eliminations: 0,
+    assists: 0,
+    deaths: 0,
+    damage: 0,
+    healing: 0,
+  };
 
   return {
     battleTag,
@@ -144,22 +162,22 @@ function toNormalized(
     mainRole,
     competitiveRank,
     competitiveLabel: rankLabel(competitiveRank, mainRole),
-    gamesPlayed: source.games_played,
-    winrate: source.winrate,
-    kda: source.kda,
-    timePlayedSeconds: source.time_played,
-    deathsPer10min: source.average.deaths,
-    damagePer10min: source.average.damage,
-    healingPer10min: source.average.healing,
-    elimsPer10min: source.average.eliminations,
-    assistsPer10min: source.average.assists,
+    gamesPlayed: finiteNumber(source.games_played),
+    winrate: finiteNumber(source.winrate),
+    kda: finiteNumber(source.kda),
+    timePlayedSeconds: finiteNumber(source.time_played),
+    deathsPer10min: finiteNumber(average.deaths),
+    damagePer10min: finiteNumber(average.damage),
+    healingPer10min: finiteNumber(average.healing),
+    elimsPer10min: finiteNumber(average.eliminations),
+    assistsPer10min: finiteNumber(average.assists),
     gamemode,
   };
 }
 
 export async function fetchPlayerStats(battleTag: string): Promise<NormalizedPlayerStats> {
   const trimmed = battleTag.trim();
-  if (!trimmed.includes("#") && !trimmed.includes("-")) {
+  if (!/^.+[#-]\d{3,8}$/u.test(trimmed)) {
     throw new PlayerFetchError(
       "unknown",
       trimmed,

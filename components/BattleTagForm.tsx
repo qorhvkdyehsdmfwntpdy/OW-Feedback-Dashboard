@@ -51,6 +51,7 @@ export function BattleTagForm({
       return;
     }
     setLocalError(null);
+    onClearErrors();
     onSubmit();
   }
 

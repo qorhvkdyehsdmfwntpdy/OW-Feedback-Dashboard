@@ -35,7 +35,7 @@ export function ComparisonTable({ analyses }: ComparisonTableProps) {
         </p>
         <CardTitle>포지션 / 스탯 비교</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
