@@ -98,7 +98,7 @@ export function TierListTable({ heroes, roleFilter, profile, accessToken, onVote
           </div>
         </CardHeader>
         <CardContent className="overflow-x-auto pb-5">
-          <table className="w-full min-w-[740px] border-collapse text-left text-sm">
+          <table className="w-full min-w-[840px] border-collapse text-left text-sm">
             <thead>
               <tr className="border-b border-slate-700 text-xs text-slate-400">
                 <th className="px-3 py-2 font-medium">영웅</th>
@@ -116,6 +116,7 @@ export function TierListTable({ heroes, roleFilter, profile, accessToken, onVote
                     </button>
                   </th>
                 ))}
+                <th className="px-3 py-2 text-right font-medium">유저 평균 체감 티어</th>
                 <th className="px-3 py-2 text-right font-medium">밴률</th>
               </tr>
             </thead>
@@ -134,10 +135,11 @@ export function TierListTable({ heroes, roleFilter, profile, accessToken, onVote
                   <td className="px-3 py-2 text-right font-semibold tabular-nums text-orange-300">{hero.metaScore.toFixed(1)}</td>
                   <td className="px-3 py-2 text-right tabular-nums text-slate-200">{hero.winrate.toFixed(2)}%</td>
                   <td className="px-3 py-2 text-right tabular-nums text-slate-200">{hero.pickrate.toFixed(2)}%</td>
+                  <td className="px-3 py-2 text-right tabular-nums text-cyan-200">{hero.communityTier ? `${hero.communityTier} · ${hero.communityVoteCount ?? 0}표` : "—"}</td>
                   <td className="px-3 py-2 text-right tabular-nums text-slate-200">{hero.banrate === null ? "—" : `${hero.banrate.toFixed(2)}%`}</td>
                 </tr>
               ))}
-              {visibleHeroes.length === 0 ? <tr><td colSpan={7} className="px-3 py-12 text-center text-slate-400">조건에 맞는 영웅이 없습니다.</td></tr> : null}
+              {visibleHeroes.length === 0 ? <tr><td colSpan={8} className="px-3 py-12 text-center text-slate-400">조건에 맞는 영웅이 없습니다.</td></tr> : null}
             </tbody>
           </table>
         </CardContent>

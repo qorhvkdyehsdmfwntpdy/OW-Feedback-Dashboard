@@ -21,8 +21,8 @@ export function CloudShareButton({ name, battleTags, gamemode, profile, accessTo
   const [shareUrl, setShareUrl] = useState("");
 
   async function createLink() {
-    if (!name.trim() || !battleTags.some((tag) => tag.trim())) {
-      toast.error("팀 이름과 공유할 배틀태그를 입력해 주세요.");
+    if (!name.trim() || battleTags.length !== 5 || battleTags.some((tag) => !/^.+[#-]\d{3,8}$/u.test(tag.trim()))) {
+      toast.error("팀 이름과 5개의 유효한 배틀태그를 입력해 주세요.");
       return;
     }
     if (!accessToken) {

@@ -45,10 +45,14 @@ create table if not exists public.lfg_applications (
 alter table public.lfg_applications enable row level security;
 
 insert into public.lfg_applications (post_id, user_id)
-select posts.id, applicants.user_id::uuid
+select posts.id, applicant_users.id
 from public.lfg_posts as posts
 cross join lateral jsonb_array_elements_text(posts.applicants) as applicants(user_id)
-join auth.users as applicant_users on applicant_users.id = applicants.user_id::uuid
+join auth.users as applicant_users on applicant_users.id = case
+  when applicants.user_id ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+  then applicants.user_id::uuid
+  else null
+end
 where applicants.user_id ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
 on conflict do nothing;
 

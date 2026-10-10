@@ -48,7 +48,8 @@ export function SharedSquadView({ id }: SharedSquadViewProps) {
         if (!analysisResponse.ok) throw new Error(analysisPayload.message ?? "전적 분석을 불러오지 못했습니다.");
         setAnalyses(analysisPayload.analyses ?? []);
         setErrors(analysisPayload.errors ?? []);
-        const metaResponse = await fetch("/api/meta?gamemode=competitive&platform=pc&region=americas", { signal: controller.signal });
+        const metaMode = sharedPayload.team.gamemode === "quickplay" ? "quickplay" : "competitive";
+        const metaResponse = await fetch(`/api/meta?gamemode=${metaMode}&platform=pc&region=americas`, { signal: controller.signal });
         if (metaResponse.ok) {
           const meta = await metaResponse.json() as { heroes?: import("@/types/tier").HeroMetaAnalysis[] };
           if (meta.heroes) {

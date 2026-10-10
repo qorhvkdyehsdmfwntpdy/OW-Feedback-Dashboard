@@ -9,16 +9,20 @@ export async function GET(request: Request) {
   if (!supabase) return NextResponse.json({ message: "Supabase 환경 변수가 설정되지 않았습니다." }, { status: 503 });
   const heroKey = new URL(request.url).searchParams.get("hero");
   if (!heroKey || !/^[a-z0-9-]{2,40}$/u.test(heroKey)) return NextResponse.json({ message: "영웅 키가 올바르지 않습니다." }, { status: 400 });
-  const { data, error } = await supabase.from("hero_votes").select("tier,comment,created_at").eq("hero_key", heroKey).order("created_at", { ascending: false }).limit(500);
-  if (error) return NextResponse.json({ message: "커뮤니티 투표를 조회하지 못했습니다." }, { status: 500 });
-  const votes = data ?? [];
-  const average = votes.length ? votes.reduce((sum, vote) => sum + tierPoints[vote.tier], 0) / votes.length : null;
+  const [{ data: comments, error: commentsError }, { data: rollups, error: rollupError }] = await Promise.all([
+    supabase.from("hero_votes").select("comment,created_at").eq("hero_key", heroKey).order("created_at", { ascending: false }).limit(20),
+    supabase.rpc("get_hero_vote_rollup"),
+  ]);
+  if (commentsError || rollupError) return NextResponse.json({ message: "커뮤니티 투표를 조회하지 못했습니다." }, { status: 500 });
+  const summary = rollups?.find((vote) => vote.hero_key === heroKey);
+  const count = summary?.vote_count ?? 0;
+  const average = summary?.average_points ?? null;
   return NextResponse.json({
     heroKey,
-    voteCount: votes.length,
+    voteCount: count,
     averageTierPoints: average,
     averageTier: average === null ? null : average >= 4.5 ? "S" : average >= 3.5 ? "A" : average >= 2.5 ? "B" : average >= 1.5 ? "C" : "D",
-    comments: votes.filter((vote) => vote.comment.trim()).slice(0, 12).map((vote) => ({ comment: vote.comment, createdAt: vote.created_at })),
+    comments: (comments ?? []).filter((vote) => vote.comment.trim()).slice(0, 12).map((vote) => ({ comment: vote.comment, createdAt: vote.created_at })),
   }, { headers: { "Cache-Control": "public, s-maxage=30, stale-while-revalidate=60" } });
 }
 

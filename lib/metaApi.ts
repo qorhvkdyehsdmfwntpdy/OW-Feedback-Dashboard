@@ -65,17 +65,9 @@ export async function fetchHeroMeta(options: {
   const heroes = calculateHeroTiers(dataset);
   const supabase = getSupabaseClient();
   if (supabase) {
-    const { data } = await supabase.from("hero_votes").select("hero_key,tier").limit(5000);
-    if (data) {
-      const values: Record<string, { total: number; count: number }> = {};
-      const points: Record<string, number> = { S: 5, A: 4, B: 3, C: 2, D: 1 };
-      for (const vote of data) {
-        const current = values[vote.hero_key] ?? { total: 0, count: 0 };
-        current.total += points[vote.tier] ?? 3;
-        current.count += 1;
-        values[vote.hero_key] = current;
-      }
-      const communityVotes = Object.entries(values).map(([heroKey, value]) => ({ heroKey, averagePoints: value.total / value.count, count: value.count }));
+    const { data, error } = await supabase.rpc("get_hero_vote_rollup");
+    if (!error && data) {
+      const communityVotes = data.map((vote) => ({ heroKey: vote.hero_key, averagePoints: vote.average_points, count: vote.vote_count }));
       return {
         heroes: blendCommunityVotes(heroes, communityVotes),
         mode: options.mode,

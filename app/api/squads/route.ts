@@ -13,9 +13,12 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json() as { name?: unknown; battleTags?: unknown; gamemode?: unknown; ownerTag?: unknown };
-    const battleTags = Array.isArray(body.battleTags) ? body.battleTags.filter(validTag).slice(0, 5).map((tag) => tag.trim()) : [];
+    if (!Array.isArray(body.battleTags) || body.battleTags.length !== 5 || !body.battleTags.every(validTag)) {
+      return NextResponse.json({ message: "공유 스쿼드에는 5개의 유효한 배틀태그가 필요합니다." }, { status: 400 });
+    }
+    const battleTags = body.battleTags.map((tag) => tag.trim());
     const name = typeof body.name === "string" ? body.name.trim().slice(0, 60) : "";
-    if (!name || battleTags.length === 0) return NextResponse.json({ message: "팀 이름과 한 명 이상의 올바른 배틀태그가 필요합니다." }, { status: 400 });
+    if (!name) return NextResponse.json({ message: "팀 이름을 입력해 주세요." }, { status: 400 });
     const gamemode = body.gamemode === "quickplay" ? "quickplay" : "competitive";
     const ownerTag = typeof body.ownerTag === "string" && validTag(body.ownerTag) ? body.ownerTag.trim() : null;
     const { data, error } = await supabase.from("squad_teams").insert({ name, battle_tags: battleTags, gamemode, owner_tag: ownerTag, owner_id: user.id, is_public: true }).select("id,name,battle_tags,gamemode,created_at").single();

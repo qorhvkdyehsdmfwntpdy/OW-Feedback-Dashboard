@@ -4,7 +4,7 @@
 
 1. Create a Supabase project and copy its project URL, anon key, and service-role key into `.env.local` using `.env.example` as the template.
 2. In Supabase Authentication settings, enable **Allow anonymous sign-ins**. The browser creates a Supabase anonymous user and keeps its session. The local nickname/BattleTag profile remains a display profile, not a password account.
-3. Run `supabase/migrations/202610100001_dashboard_features.sql` and then `supabase/migrations/202610110001_lfg_recruitment_fields.sql` in order (or apply both with the Supabase CLI).
+3. Run `supabase/migrations/202610100001_dashboard_features.sql`, `supabase/migrations/202610110001_lfg_recruitment_fields.sql`, and `supabase/migrations/202610110002_hero_vote_rollup.sql` in order (or apply all three with the Supabase CLI).
 4. Restart Next.js after changing environment variables.
 
 `SUPABASE_SERVICE_ROLE_KEY` is server-only. Never prefix it with `NEXT_PUBLIC_`, commit a real value, or expose it in client code. Public reads use the anon key; API mutations verify the Supabase JWT and use the service-role client on the server. RLS allows public reads and denies anonymous table writes.

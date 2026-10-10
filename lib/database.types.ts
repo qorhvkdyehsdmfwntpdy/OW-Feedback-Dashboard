@@ -136,6 +136,7 @@ export interface Database {
     Views: Record<string, never>;
     Functions: {
       apply_lfg_post: { Args: { p_post_id: string; p_applicant_id: string }; Returns: string };
+      get_hero_vote_rollup: { Args: Record<string, never>; Returns: Array<{ hero_key: string; vote_count: number; average_points: number }> };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
